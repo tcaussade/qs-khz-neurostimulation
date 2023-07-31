@@ -1,0 +1,285 @@
+/*--------------------------------------------------------------------
+May 2020
+Leo Medina & Nathan Titus
+Dorsal Column Fiber Model
+
+This model is based on the MRG fiber model
+----------------------------------------------------------------------*/
+
+// ---------------------- Global Variables ----------------------------
+
+{load_file("../nrnlib/freq_dep_capacitance.hoc")}
+
+begintemplate DCFiber2
+// params set when creating new object:
+public fiberD, nnodefiberD, nnodes, is_constant_cm, C_dc, is_xtra 
+// vectors or arrays for storing position of fiber model
+public section_coord, xcoord, ycoord, zcoord 
+// params defined as globals in this class. Defined in global_parameters()
+public ntotal, paralength1, nodelength, space_p1, space_p2, space_i
+public rhoa, mycm, cygm, g_leak_mysa, g_leak_flut, g_leak_stin
+// section list useful to itereate over all sections
+public sl
+// functions handy to call from outside
+public deactivate_node, build, total_sections
+// other variable that may need to be public
+
+objref cm_freq[1]
+objref sl // section list to store all sections. Useful for iteration
+objref section_coord, xcoord, ycoord, zcoord //3D coordinates of all sections
+objref vectmp //auxiliar vector for filling coordinates
+
+create node[1], MYSA[1], FLUT[1], STIN[1]
+
+// the global parameters may be updated. In such case, model fiber should be rebuilt using "build()"
+proc global_parameters(){
+  ntotal = nnodes + 10*(nnodes-1)
+  e_leak = -80 //mV//
+
+  //morphological parameters//
+  paralength1 = 3
+  nodelength = 1.0
+  space_p1 = 0.002
+  space_p2 = 0.004
+  space_i = 0.004
+
+  //electrical parameters//
+  rhoa = 70 //Ohm-cm//
+  mycm = 0.1 //uF/cm2/lamella membrane//
+  mygm = 0.002 //S/cm2/lamella membrane//
+  g_leak_mysa = 0.001 //S/cm2
+  g_leak_flut = 0.0001 //S/cm2
+  g_leak_stin = 0.0001 //S/cm2
+}
+
+proc dependent_variables() { 
+  midnode = (nnodes-1)/2
+  axonD = 0.73*fiberD - 0.75  //Belanger et al 2012. Not tested for fiberD<2um, negative for fiberD<1.03
+  nodeD = 0.29*fiberD + 0.36 //
+  paraD1 = nodeD
+  paraD2 = axonD //0.889*fiberD - 1.91
+  deltax = int(92.765*fiberD + 108.97) //integer for consistency with original MRG description
+  //deltax = int(-3.22*fiberD*fiberD + 148*fiberD - 128) // Nikki extrapolation
+  paralength2 = int(2.581*fiberD + 19.59)
+  //paralength2 = int(-0.171*fiberD*fiberD + 6.48*fiberD - 0.935) // Nikki extrapolation
+  // nl = int(6.372*fiberD + 51.823)
+  nl = int(-0.4*fiberD*fiberD + 14.9*fiberD + 9.7)
+  interlength  = (deltax-nodelength-(2*paralength1)-(2*paralength2))/6
+  paranodes1 = 2*(nnodes-1) // MYSA
+  paranodes2 = 2*(nnodes-1) // FLUT
+  axoninter  = 6*(nnodes-1) // STIN
+  //Electrical
+  Rpn0 = (rhoa*100)/(PI*((((nodeD/2)+space_p1)^2)-((nodeD/2)^2))) // 100 converts rhoa from ohm-cm to Mohm-cm, and denominator from um^2 to cm^2. Rpn0 in Mohm/cm
+  Rpn1 = (rhoa*100)/(PI*((((paraD1/2)+space_p1)^2)-((paraD1/2)^2)))
+  Rpn2 = (rhoa*100)/(PI*((((paraD2/2)+space_p2)^2)-((paraD2/2)^2)))
+  Rpx  = (rhoa*100)/(PI*((((axonD/2)+space_i)^2)-((axonD/2)^2)))
+}
+
+proc deactivate_node(){
+  access node[$1]
+  if (ismembrane("node_channels")==1) {uninsert node_channels}
+  insert pas
+  g_pas = g_leak_stin
+  e_pas = e_leak
+  xraxial = 1e10
+  xg      = mygm/(nl*2) // lumps all lamellae specific conductances into 1 membrane
+  xc      = mycm/(nl*2) // lumps all lamellae specific capacitances into 1 memb
+}
+
+// ---------------------- Building Axon ----------------------------
+proc build(){
+dependent_variables()
+objref cm_freq[ntotal]
+
+section_coord = new Vector(ntotal,0)
+sl = new SectionList()
+
+create node[nnodes], MYSA[paranodes1], FLUT[paranodes2], STIN[axoninter]
+  
+  for i=0, nnodes-1 {
+    node[i]{
+      ii = i
+      section_coord.x[ii] = .5*nodelength + i*deltax
+      sl.append()
+
+      nseg = 1
+      diam = nodeD
+      L  = nodelength
+      Ra = rhoa
+      insert node_ikil
+      insert newnav6
+      gbar_newnav6 = 0.5
+      if(is_xtra==1){
+          insert extracellular
+          xraxial = Rpn0
+          xg = 1e10 // short circuit
+          xc = 0    // short circuit
+      }
+      if (is_constant_cm == 1){
+        cm = C_dc
+      }else{
+        cm_freq[ii] = new FDCapacitance(C_dc)
+        cm = 0
+      }
+    }
+  }
+
+  for i=0, paranodes1-1 {
+    MYSA[i]{
+      ii = i + nnodes
+      if (i % 2 == 0) { section_coord.x[ii] = nodelength + .5*paralength1 + int(i/2)*deltax } // left mysa of each segment
+      if (i % 2 == 1) { section_coord.x[ii] = nodelength + 1.5*paralength1 + 2*paralength2 + 6*interlength + int(i/2)*deltax } // right mysa of each segment
+      sl.append()
+
+      nseg = 1
+      diam = fiberD
+      L  = paralength1
+      Ra = rhoa*(1/(paraD1/fiberD)^2)
+      insert pas
+      g_pas  = g_leak_mysa*paraD1/fiberD
+      e_pas  = e_leak
+      if(is_xtra==1){
+          insert extracellular
+          xraxial=Rpn1
+          xg=mygm/(nl*2)
+          xc=mycm/(nl*2)
+      }
+      
+      if (is_constant_cm == 1){
+        cm = C_dc*paraD1/fiberD
+      }else{
+        cm_freq[ii] = new FDCapacitance(C_dc*paraD1/fiberD)
+        cm = 0
+      }
+    }
+  }
+
+  for i=0, paranodes2-1 {
+    FLUT[i]{
+      ii = i + nnodes + paranodes1
+      if (i % 2 == 0) { section_coord.x[ii] = nodelength + paralength1 + .5*paralength2 + int(i/2)*deltax } // left flut
+      if (i % 2 == 1) { section_coord.x[ii] = nodelength + paralength1 + 1.5*paralength2 + 6*interlength + int(i/2)*deltax } //right flut
+      sl.append()
+
+      nseg = 1
+      diam = fiberD
+      L  = paralength2
+      Ra = rhoa*(1/(paraD2/fiberD)^2)
+
+      insert pas
+      insert kv12
+      gba_kv12 = 0.002
+      g_pas  = g_leak_flut*paraD2/fiberD
+      e_pas  = e_leak
+      if(is_xtra==1){
+          insert extracellular
+          xraxial=Rpn2
+          xg=mygm/(nl*2)
+          xc=mycm/(nl*2)
+      }
+      
+      if (is_constant_cm == 1){
+        cm = C_dc*paraD2/fiberD
+      }else{
+        cm_freq[ii] = new FDCapacitance(C_dc*paraD2/fiberD)
+        cm = 0
+      }
+    }
+  }
+
+  for i=0, axoninter-1 {
+    STIN[i]{
+      ii = i + nnodes + paranodes1 + paranodes2
+      if (i % 6 == 0) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 0.5*interlength + int(i/6)*deltax }
+      if (i % 6 == 1) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 1.5*interlength + int(i/6)*deltax }
+      if (i % 6 == 2) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 2.5*interlength + int(i/6)*deltax }
+      if (i % 6 == 3) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 3.5*interlength + int(i/6)*deltax }
+      if (i % 6 == 4) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 4.5*interlength + int(i/6)*deltax }
+      if (i % 6 == 5) { section_coord.x[ii] = nodelength + paralength1 + paralength2 + 5.5*interlength + int(i/6)*deltax }
+      sl.append()
+
+      nseg = 1
+      diam = fiberD
+      L  = interlength
+      Ra = rhoa*(1/(axonD/fiberD)^2)
+
+      insert pas
+      insert internode_channels
+      g_pas  = g_leak_stin*axonD/fiberD
+      e_pas  = e_leak
+      if(is_xtra==1){
+          insert extracellular
+          xraxial=Rpx
+          xg=mygm/(nl*2)
+          xc=mycm/(nl*2)
+      }
+      
+      if (is_constant_cm == 1){
+        cm = C_dc*axonD/fiberD
+      }else{
+        cm_freq[ii] = new FDCapacitance(C_dc*axonD/fiberD)
+        cm = 0
+      }
+    }
+  }
+
+  for i=0, nnodes-2 {
+    connect MYSA[2*i](0), node[i](1)
+    connect FLUT[2*i](0), MYSA[2*i](1)
+    connect STIN[6*i](0), FLUT[2*i](1)
+    connect STIN[6*i+1](0), STIN[6*i](1)
+    connect STIN[6*i+2](0), STIN[6*i+1](1)
+    connect STIN[6*i+3](0), STIN[6*i+2](1)
+    connect STIN[6*i+4](0), STIN[6*i+3](1)
+    connect STIN[6*i+5](0), STIN[6*i+4](1)
+    connect FLUT[2*i+1](0), STIN[6*i+5](1)
+    connect MYSA[2*i+1](0), FLUT[2*i+1](1)
+    connect node[i+1](0), MYSA[2*i+1](1)
+  }
+
+  // realigning axon w/ middle node @ x = 0
+  section_coord = section_coord.add(-section_coord.x[midnode])
+
+  // Vectors intended to store 3D positions of fiber 
+  // As of 2019, model fiber aligned over x-axis
+  // In future versions, other axes may be used 
+  xcoord = new Vector()
+  xcoord.append(section_coord)
+  ycoord = new Vector(ntotal,0)
+  zcoord = new Vector(ntotal,0)
+
+  // rescaling distance from um -> mm
+  xcoord.mul(1e-3)
+  ycoord.mul(1e-3)
+  zcoord.mul(1e-3)
+
+  deactivate_node(0) //shunt end
+  deactivate_node(nnodes-1) //shunt end
+
+}
+
+
+func total_sections(){
+  return ntotal
+}
+
+proc init(){
+  // default parameters. They can be passed as arguments
+  fiberD = 6
+  nnodes = 101
+  is_constant_cm = 0
+  C_dc = 1
+  is_xtra = 1
+
+  if (numarg()>0) {fiberD = $1}
+  if (numarg()>1) {nnodes = $2}
+  if (numarg()>3) {is_constant_cm = $3}
+  if (numarg()>4) {C_dc = $4}
+  if (numarg()>5) {is_xtra = $5}
+  
+  global_parameters()
+  build() // note that build calls "dependent_variables()" in case a global was updated
+}
+
+endtemplate DCFiber2
+

@@ -1,0 +1,4 @@
+//Load here all your fiber model files
+{load_file("DCfiber.hoc")}
+{load_file("DCfiber2.hoc")}
+{load_file("MRGfiber.hoc")}
