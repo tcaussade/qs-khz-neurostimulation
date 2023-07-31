@@ -67,6 +67,3 @@ for i,fiberD in enumerate(diameters):
         pot    = CurrentDistance.compute_potential(t, source, TISSUE, sigma_qs = sqs)
 
         thresh_current[i,j] = NeuronExperiment(h_params).threshold_finder(FIBER, t*1e3, (source,pot), amp1 = max_amp)
-
-        np.savetxt("inh_results/"+fibermodel+"/cd_thresholds_pw%1.0f_%s.txt" % (source_params["pw"]/2*1e3, model),
-                    thresh_current, fmt='%6g', delimiter=',', comments='')

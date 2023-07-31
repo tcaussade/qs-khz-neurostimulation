@@ -19,6 +19,8 @@ The MRG model fiber .hoc files are in the "MRG" file.
 
 ### Running the experiments ("exp_title.py" files)
 
+Suggestion: all experiments should be slightly modified properly to save data as-you-go.
+
 Current-distance curves
 -> exp_current_distance.py
 

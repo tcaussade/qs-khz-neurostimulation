@@ -1,10 +1,16 @@
 from neuron import h
 import numpy as np
-
 from inh_src.functionalities import *
+
+""""" 
+Record action potentials for repetitive stimulation.
+The folder to keep the files should be created before running this file.
+"""""
 
 def topulsearray(t,v, tr = -30):
     return pytools.detect_spikes(v, t, thresh=tr, fs= 20)
+
+folder_for_saving = "insert_name_here"
 
 # Search ranges
 amplitudes = np.arange(0.0, 0.9, 0.015)
@@ -82,5 +88,5 @@ for repetition_rate in ftrains:
             # instantiate neuron #
             fib_res = response.run_neuron(FIBER,t*1e3,(elec,))
             fib_spk = topulsearray(fib_res[0].as_numpy(),fib_res[1]["ve"])
-            np.savetxt("inh_results/"+fibermodel+"/spiketimes/spikestimestamp_ft%1.2f_amp%1.2f_fiberD%1.1f_%s.txt" % (source_params["ftrain"], amplitude,fiberD, electricmodel),
+            np.savetxt(folder_for_saving+"/spikestimestamp_ft%1.2f_amp%1.2f_fiberD%1.1f_%s.txt" % (source_params["ftrain"], amplitude,fiberD, electricmodel),
                     fib_spk, fmt = "%6g", delimiter=',', comments = '')

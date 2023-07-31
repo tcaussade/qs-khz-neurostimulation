@@ -3,17 +3,25 @@ import numpy as np
 
 from inh_src.functionalities import *
 
+""""" 
+Block thresholds for a single traveling potential.
+"""""
+
 # PARAMETERS
 ftrains         = np.arange(4,40.1,2)
-electric_model  = "QS" # or "IH"
 fibermodel      = "MRG"
 diameters       = np.array([7.3, 10.0, 12.8, 16.0]) 
 max_amp         = 1.5 # Maximal amplitude to perform binary-search 
 active_duration = 80
 
-wf       = "fixed" # or "fullduty", this refers to the block strategy
-sqslabel = "sopt" # if corrected conductivity is desired
-wflabel  = "_" + wf + "_" + sqslabel # file saving name
+electric_model  = "QS"
+# electric_model  = "IH"
+
+wf       = "fixed"
+# wf       = "fullduty"
+
+sigma_qs = "corrected"
+# sigma_qs = "naive"
 
 # Select Media #
 tissue_type = "brain_grey"
@@ -21,12 +29,13 @@ TISSUE = Tissue(tissue_type)
 
 # simulation resolution #
 fmax = ftrains[-1] * 50
-simulation_params = {"fcutoff" : int(fmax), # [kHz] ideally 500 kHz (Bossetti)
-                    "pp" : 25}        # Points to sample the highest frequency
+simulation_params = {"fcutoff" : int(fmax), # kHz
+                    "pp" : 25}   
 EXP = Experiment(simulation_params)
 EXP.dt = 1e-7
 
-for ft in ftrains:
+block_thresh = np.zeros((len(ftrains),len(diameters)))
+for i,ft in enumerate(ftrains):
 
     # Construct the source #
     source_params = {"forma": "biphasic_train", 
@@ -49,7 +58,7 @@ for ft in ftrains:
     elec  = ElectricPotential(source_params, electric_model)
 
     # quasi-static conductivity
-    if sqslabel == "sopt":
+    if sigma_qs == "corrected":
         sqs  = EXP.optimal_sqs(TISSUE, elec)
     else: 
         sqs  = 0.105
@@ -70,8 +79,7 @@ for ft in ftrains:
     NeuronYale.set_intra_stim_on(intra_params)
 
     # Run neuron
-    block_thresh = np.zeros(len(diameters))
-    for i,fiberD in enumerate(diameters):
+    for j,fiberD in enumerate(diameters):
         # create fiber #
         fiber_params = {"constant_cm" : 0,
                         "c_dc" : 1.0,
@@ -81,7 +89,4 @@ for ft in ftrains:
                         "nnodes" : 84}
         FIBER = FiberConstructor(fiber_params).assign_fiber_model(fibermodel)   
 
-        block_thresh[i] = NeuronYale.threshold_finder(FIBER, t*1e3, (elec,pot), amp1 = max_amp, tol= 1e-5)
-
-        np.savetxt("inh_results/"+fibermodel+"/blocking"+wflabel+"/threshs_ft%1.2f_%s.txt" % (source_params["ftrain"], electric_model),
-                        block_thresh, fmt='%6g', delimiter=',', comments='')
+        block_thresh[i,j] = NeuronYale.threshold_finder(FIBER, t*1e3, (elec,pot), amp1 = max_amp, tol= 1e-5)

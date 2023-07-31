@@ -4,6 +4,11 @@ import numpy as np
 
 from inh_src.functionalities import *
 
+""""" 
+Single strength-duration experiment to determine thresholds as function of pulse duration.
+Experiment is repeated for the number of fiber diameters of interest.
+"""""
+
 # PARAMETERS
 fiberdist  = 1.0  # electrode-to-fiber distance (mm)
 model      = "QS" # electric model (QS/IH)
@@ -13,17 +18,12 @@ max_amp    = 0.5  # Maximal amplitude to perform binary-search
 diameters  = np.array([7.3, 10.0, 12.8, 16.0])
 pulses_dur = 10 * np.logspace(-3,-1,20) 
 
-# file name for the results
-exp_label = "sopt" 
-# exp_label = "fix"
-name = "/sd_thresholds_dist%1.2f_%s_%s.txt" % (fiberdist, model, exp_label) 
-
+sigma_qs   = "corrected" # determines the effective conductivity
+# sigma_qs   = "naive"     # uses sqs = 0.105
 
 # Select Media #
 tissue_type = "brain_grey"
 TISSUE = Tissue(tissue_type)
-
-
 
 # simulation resolution #
 simulation_params = {"fcutoff" : 500.0, # [kHz] 
@@ -57,9 +57,9 @@ for j,pw in enumerate(pulses_dur):
     source = ElectricPotential(source_params, model)
 
     # Conductivity for quasi-static
-    if exp_label == "sopt": # Correcetd value
+    if sigma_qs == "corrected": # Correcetd value
         sqs = StrengthDuration.optimal_sqs(TISSUE, source) 
-    elif exp_label == "fix": # fixed value
+    elif sigma_qs == "naive": # fixed value
         sqs = 0.105 
 
     t      = StrengthDuration.timegrid([source])
@@ -75,5 +75,3 @@ for j,pw in enumerate(pulses_dur):
         FIBER = FiberConstructor(fiber_params).assign_fiber_model(fibermodel)
 
         thresh_current[i,j] = NeuronExperiment(h_params).threshold_finder(FIBER, t*1e3, (source,pot), amp1  = max_amp)
-        np.savetxt("inh_results/"+ fibermodel + name,
-            thresh_current, fmt='%6g', delimiter=',', comments='')
