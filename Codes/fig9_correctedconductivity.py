@@ -2,19 +2,17 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from experiment_files.inh_src.Tissue import Tissue
-from experiment_files.inh_src.Experiment import Experiment
-from experiment_files.inh_src.ElectricPotential import ElectricPotential
-
 import pandas as pd
 import seaborn as sns
 
-tissues_type = ["brain_grey", "skin","fat", "muscle"]
-waveforms = ["biphasic_train", "asym_train", "ECT_wf"]
+from inh_src.Tissue import Tissue
+from inh_src.Experiment import Experiment
+from inh_src.ElectricPotential import ElectricPotential
 
-# pws = np.linspace(0.001, 0.5, 40) * 2
+tissues_type = ["brain_grey", "skin","fat", "muscle"]
+waveforms = ["canonical", "asymmetric", "shifted"]
+
 pws = np.logspace(-3,-0.4,20) * 2
-# sopt = np.zeros((len(pws), len(tissues), len(waveforms)))
 df_sopt = pd.DataFrame()
 
 simulation_params = {"fcutoff" : 2000.0, "pp" : 30}  
@@ -35,12 +33,10 @@ for i, tissue in enumerate(tissues_type):
                 "loc": np.array([0.,1.0,0.]), "pw": np.NaN}
         elec = ElectricPotential(source_params, "QS")
 
-        ### Optimal SIGMA_QS ###
+        ### Corrected SIGMA_QS ###
         sopt = np.zeros(len(pws))
         for n,pw in enumerate(pws):
-            # print("Computation", n)
             elec.pw = pw * 1e-3
-            # sopt[n,i,j] = EXP.optimal_sqs(TISSUE, elec)
             sopt[n] = EXP.optimal_sqs(TISSUE, elec)
 
         new_sopts = pd.DataFrame({"sopt" : sopt,
@@ -49,14 +45,13 @@ for i, tissue in enumerate(tissues_type):
                                   "wf" : wf}) 
         list_dfs.append(new_sopts)
 df_sopt = pd.concat(list_dfs, keys = np.arange(len(list_dfs)) )
-# df_sopt = df_sopt[df_sopt["wf"] != "ECT_wf"]
+
 
 # plot
 plt.figure(figsize=(4,3))
-# colors = ["#2a2aa5", "#a52a2a", "#2aa52a","#a52a68"]
 colors = ["#6b6867", "#875632"]
-# cmap = sns.color_palette(colors, n_colors=len(tissues_type))
 cmap = sns.color_palette("colorblind")
+plt.rc('font', size = 16)
 
 p = sns.lineplot(data = df_sopt, x = "pw", y = "sopt",
                  hue = "tissue", style = "wf", markers = True, palette = "colorblind")
@@ -64,10 +59,7 @@ ylims = np.arange(0.00,0.2501,0.01)
 xlims = np.arange(0,250, 20)
 p.set(xlabel = "Pulse duration ($\mu$s)", ylabel = "$\~\sigma_{qs}$ (S/m)",
       ylim = (ylims[0],ylims[-1]), yticks = ylims,
-      xlim = (xlims[1]/10,xlims[-1]) 
-      # xticks = xlims, 
-      # xscale = "log"
-      )
+      xlim = (xlims[1]/10,xlims[-1]))
 h,_ = p.get_legend_handles_labels()
 l = ["Tissues", "Grey matter", "Skin", "Fat", "Muscle",
      "Waveforms","Canonical", "Asymmetric", "Shifted"]

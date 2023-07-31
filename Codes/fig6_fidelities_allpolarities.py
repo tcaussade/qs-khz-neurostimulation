@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import os
 
-fibermodel = "MRG"
+folder = "DataBase/spiketimes_"
 fD         = "12.8"
 
 amplitudes = np.arange(0.0, 0.9, 0.015)
@@ -15,7 +15,7 @@ stm_ps      = 10
 pw          = 0.2
 
 
-polarities = ["_biphasic_final", "_positive_polarity"]
+polarities = ["canonical", "anodic"]
 
 fid_qs = np.zeros( (len(ftrains), len(amplitudes), len(polarities)) )
 fid_ih = np.zeros( (len(ftrains), len(amplitudes), len(polarities)) )
@@ -30,8 +30,8 @@ for i, ft_data in enumerate(ftrains):
         for k, label in enumerate(polarities):
             amp = "%1.2f" % amp_data
             
-            path_qs = "inh_results/"+fibermodel+"/spiketimes"+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_QS.txt"
-            path_ih = "inh_results/"+fibermodel+"/spiketimes"+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_IH.txt"
+            path_qs = folder+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_QS.txt"
+            path_ih = folder+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_IH.txt"
 
             if os.path.exists(path_ih) and os.path.exists(path_qs):
                 fib_spk_ih = np.loadtxt(path_ih)
@@ -70,7 +70,7 @@ fig, ax = plt.subplots(3,len(polarities), sharex = True, sharey= True, figsize =
 for k, lb in enumerate(polarities):
     a0 = ax[0,k].scatter(X,Y, c = fid_qs[:,:,k].T, s = 30, cmap = cmap_qs)
     a1 = ax[1,k].scatter(X,Y, c = fid_ih[:,:,k].T, s = 30, cmap = cmap_ih)
-    if lb == "_positive_polarity":
+    if lb == "anodic":
         ax[0,k].set_title("Anodic")
     else: 
         ax[0,k].set_title("Cathodic")
@@ -96,6 +96,7 @@ if plotcutoffs:
         ax[2,k].plot(fcut1[:,k],amplitudes*1e3, color = "dimgrey", linestyle = "solid")
         ax[2,k].plot(fcut2[:,k],amplitudes*1e3, color = "black", linestyle = "dotted")
 
-# ax[0,0].set_xlim(0,2)
-# ax[0,0].set_xticks(np.arange(0,2,0.5))
+    for j in range(3):
+        ax[j,k].set_xticks([0,1/2,1,3/2,2])
+plt.rc('font', size = 20)
 plt.show()

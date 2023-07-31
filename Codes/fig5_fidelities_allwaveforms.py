@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 import os
 
-fibermodel = "MRG"
-fD         = "12.8"
+folder = "DataBase/spiketimes_"
+fD     = "12.8"
 
 amplitudes = np.arange(0.0, 0.9, 0.015)
 ftrains    = np.arange(0.1, 2.0+1e-5, 0.02)
@@ -31,8 +30,8 @@ for i, ft_data in enumerate(ftrains):
         for k, label in enumerate(labels):
             amp = "%1.2f" % amp_data
             
-            path_qs = "inh_results/"+fibermodel+"/spiketimes_"+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_QS.txt"
-            path_ih = "inh_results/"+fibermodel+"/spiketimes_"+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_IH.txt"
+            path_qs = folder+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_QS.txt"
+            path_ih = folder+label+"/spikestimestamp_ft"+ft+"_amp"+str(amp)+"_fiberD"+str(fD)+"_IH.txt"
 
             if os.path.exists(path_ih) and os.path.exists(path_qs):
                 fib_spk_ih = np.loadtxt(path_ih)
@@ -65,6 +64,7 @@ cmap_qs = clr.LinearSegmentedColormap.from_list('qs palette', ['#FFFFFF', '#2aa5
 cmap_ih = clr.LinearSegmentedColormap.from_list('ih palette', ['#FFFFFF', '#a52a2a'], N=256)
 cmap_err= clr.LinearSegmentedColormap.from_list('error palette', ['#a52a2a','#FFFFFF','#2aa5a5'], N=256)
 
+plt.rc('font', size = 18)
 X,Y = np.meshgrid(ftrains, amplitudes*1e3) 
 
 subtitle = ["Canonical", "Asymmetric", "Shifted"]
@@ -95,7 +95,8 @@ if plotcutoffs:
         ax[1,k].plot(fcut2[:,k],amplitudes*1e3, color = "black", linestyle = "dotted")
         ax[2,k].plot(fcut1[:,k],amplitudes*1e3, color = "dimgrey", linestyle = "solid")
         ax[2,k].plot(fcut2[:,k],amplitudes*1e3, color = "black", linestyle = "dotted")
+    
+    for j in range(3):
+        ax[j,k].set_xticks([0,1/2,1,3/2,2])
 
-# ax[0,0].set_xlim(0,2)
-# ax[0,0].set_xticks(np.arange(0,2,0.5))
 plt.show()

@@ -8,7 +8,7 @@ from inh_src.Experiment import *
 
 tissue_type = "brain_grey"; TISSUE = Tissue(tissue_type)
 
-source_params = {"forma": "biphasic_train", 
+source_params = {"forma": np.NaN, 
                 "amp": 1.0,
                 "ps": 1,  # ms
                 "pw": 0.2,    # ms # 10kHz -> 0.1ms = 100us period
@@ -32,9 +32,9 @@ import pandas as pd
 potentials = dict()
 
 for i,ft in enumerate(ftrains):
-    for j,shp in enumerate(["monophasic_train", "biphasic_train"]):
+    for j,shp in enumerate(["monophasic", "canonical"]):
 
-        if shp == "biphasic_train": source_params["pw"] = 0.5
+        if shp == "canonical": source_params["pw"] = 0.5
         else: source_params["pw"] = 0.25
         source_params["forma"]  = shp
         source_params["ftrain"] = ft
@@ -64,5 +64,5 @@ for i,ft in enumerate(ftrains):
         ax[j,i].legend(loc = 4)
     ax[0,i].set_title( ("%1.0f Hz" % (ft*1e3)) )
 
-        
+plt.rc('font', size = 22)
 plt.show()
