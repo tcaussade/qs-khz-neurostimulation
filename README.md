@@ -6,9 +6,9 @@ This repository contains all data and codes to reproduce the article: "Towards a
 ## Download
 
 From a command line:
-"""
+```
 git clone https://github.com/tcaussade/quasistatic-khz-sources
-"""
+```
 
 ## Contents
 The scripts are organized in two folders:
