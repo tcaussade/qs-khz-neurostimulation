@@ -34,7 +34,7 @@ class NeuronExperiment:
         self.temperature = params["temperature"] # 37    # Celsius degrees
         self.v_init      = params["v_init"]      # -77.3 # [mV]
         self.tend        = params["tend"]
-        self.cvode       = params["cvode"]
+        self.cvode       = params["cvode"]       # not used
 
         self.intra_stim = False
         self.recordall  = False
@@ -67,7 +67,7 @@ class NeuronExperiment:
         tstim.from_python(te)
         dt_neuron = np.min(np.diff(te)) # Neuron simulation time_step
 
-        # Set extracellular stimuls
+        # Set extracellular stimulus
         extra = dict()
         if verbose: print("Applying extracellular potential...")
         for i,s in enumerate(fiber.sl):
@@ -76,8 +76,7 @@ class NeuronExperiment:
             for elec,pot in pot_list:
                 rf        = np.sqrt( np.sum((locf - elec.loc*1e3)**2) ) 
                 r0        = np.sqrt( np.sum((elec.loc*1e3)**2) ) # scale to fiber distance 
-                local_pot += np.real(pot) * r0 / rf # I/r0 * r0/r.loc = pot * r0/r.loc
-                # if i == midnode: print("dist is %.4f" % rf) # uncomment to check scaling factor by distance
+                local_pot += np.real(pot) * r0 / rf 
             extra[i] = h.Vector()
             extra[i].from_python(local_pot) # stimulation from all electrodes
             extra[i].play(s(.5)._ref_e_extracellular,tstim, True)
@@ -92,15 +91,10 @@ class NeuronExperiment:
             iclamp.amp = 0.1
             intra_svec.play(iclamp._ref_amp, intra_t, 1)
  
-
         h.celsius = self.temperature
         h.v_init  = self.v_init
         h.tstop   = self.tend
         h.dt = dt_neuron
-
-        cvode = h.CVode(); cvode.active(0)         # CVode tools
-        #cvode.use_daspk(1)
-        #h.secondorder = 2 # NEURON: NrnDAEs only work with secondorder==0 or daspk
 
         # Outputs #
         res = dict()
@@ -134,7 +128,8 @@ class NeuronExperiment:
         h.init() # Run simulation!
         h.run() 
         
-        return th, res
+        # res keys are: {"ve", "ex"}
+        return th, res 
 
     def ask_activation(self,t,ve):
         spk = pytools.detect_spikes(ve, t.as_numpy(), thresh=-30)
@@ -142,10 +137,7 @@ class NeuronExperiment:
     def ask_blocking(self,t,ve):
         endfiber = pytools.detect_spikes(ve, t.as_numpy(), thresh=-30)
         return not (np.any(endfiber[endfiber<self.intra_ps+3]>self.intra_ps))
-
-        # assert len(endfiber) < 3 # check there are no more than 1 pulse (without considering the first one)
-        return not ( np.any(endfiber>self.intra_ps) * np.any(endfiber<self.intra_ps+3) )
-    def question(self,t,ve , to = 0.0):
+    def question(self,t,ve):
         if self.block_test:
             return self.ask_blocking(t,ve)
         else: # activation_test
@@ -157,11 +149,9 @@ class NeuronExperiment:
         iter_count = 0
         while amp1-amp0 > tol:
             amp = 0.5 * (amp1+amp0)
-            source_tp[1] = amp * source[1] # source = [info,pot]
+            source_tp[1] = amp * source[1]
 
-            th,res = self.run_neuron(fiber, t, (source_tp,), verbose = False)
-            # print("testing for I =", amp)
-            
+            th,res = self.run_neuron(fiber, t, (source_tp,), verbose = False)            
             if self.question(th,res["ve"]): 
                 amp1 = amp
             else: 
@@ -195,14 +185,7 @@ class NeuronExperiment:
         intrastimvec = h.Vector(len(intra_pot))
         intrastimvec.from_python(intra_pot)
 
-        # import matplotlib.pyplot as plt
-        # plt.plot(intra_t, intra_pot)
-        # plt.plot(intra_t, intrastimvec)
-        # plt.title("intra stimulus")
-        # plt.show()
-
         intra_tstim = h.Vector(len(intra_t))
         intra_tstim.from_python(intra_t * 1e3)
-
 
         return intra_tstim, intrastimvec

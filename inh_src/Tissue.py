@@ -15,18 +15,18 @@ class Tissue:
 
         pass
 
-    #########################
-    # Dispersion computations
-    #########################
+    ####################
+    # Dispersion model #
+    ####################
+
+    # Parameters and model from: S Gabriel, R W Lau, C Gabriel. "The dielectric properties of biological tissues: III. Parametric models for the dielectric spectrum of tissues" (1996) 
 
     def cole_cole_model(self, w):     
         # w must be angular frequency
         epsc = self.eps_inf \
                 + np.sum(self.eps/(1 + (1j*w*self.tau)**(1-self.alpha) )) \
                 + self.sigma_ionic/(1j*w*self.eps0)
-        # conductivity is in [S/m]
         return np.array([self.eps0*np.real(epsc), -w*self.eps0*np.imag(epsc)])
-
 
     def select_tissue(self,tissue):
 
@@ -63,7 +63,7 @@ class Tissue:
             alpha       = np.array([0.2,0.2,0.2,0.0], dtype  = float)
 
         elif tissue == "skin":
-            # skin wet parameters
+            # skin (wet) parameters
             eps_inf     = 4.0
             sigma_ionic = 0.0004
             eps         = np.array([39,280, 3e4,3e4], dtype = float)
@@ -71,7 +71,7 @@ class Tissue:
             alpha       = np.array([0.1,0.0,0.16,0.2], dtype  = float)
 
         elif tissue == "fat":
-            # not infiltrated
+            # (not infiltrated) fat
             eps_inf     = 2.5
             sigma_ionic = 0.01
             eps         = np.array([3, 15, 3.3e4,1e7], dtype = float)
@@ -79,7 +79,6 @@ class Tissue:
             alpha       = np.array([0.2,0.1,0.05,0.01], dtype  = float)
 
         elif tissue == "muscle":
-            # not infiltrated
             eps_inf     = 4.0
             sigma_ionic = 0.02
             eps         = np.array([50, 7000, 1.2e6,2.5e7], dtype = float)
@@ -88,7 +87,6 @@ class Tissue:
 
         else:
             print("NO TISSUE HAS BEEN SELECTED")
-            print("\ncheck your spelling...")
 
         return {"einf": eps_inf,
                 "s0":   sigma_ionic,
