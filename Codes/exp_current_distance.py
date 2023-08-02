@@ -38,7 +38,7 @@ h_params = {"temperature": 37, # Celsius
 
 # source # 
 print("\nUsing %s model, pulse duration set to %1.0fus" % (model, pulse_width*1e3) )
-source_params = {"forma": "biphasic_train", 
+source_params = {"forma": "canonical", 
                 "amp": 1.0,
                 "ps": 10 ,     # [ms]
                 "pw":  pulse_width, # [ms] 
@@ -67,3 +67,4 @@ for i,fiberD in enumerate(diameters):
         pot    = CurrentDistance.compute_potential(t, source, TISSUE, sigma_qs = sqs)
 
         thresh_current[i,j] = NeuronExperiment(h_params).threshold_finder(FIBER, t*1e3, (source,pot), amp1 = max_amp)
+        print(thresh_current[i,j])

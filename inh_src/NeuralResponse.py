@@ -166,7 +166,7 @@ class NeuronExperiment:
         from inh_src.ElectricPotential import ElectricPotential
         from inh_src.Experiment import Experiment
 
-        intra_params = {"forma": "monophasic_train", 
+        intra_params = {"forma": "monophasic", 
                         "amp": 1.0,
                         "ps": self.intra_ps,  # ms
                         "pw": 0.03,    # ms # 10kHz -> 0.1ms = 100us period

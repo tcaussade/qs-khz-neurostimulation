@@ -38,7 +38,7 @@ h_params = {"temperature": 37, # Celsius
             "cvode": 0}
 
 # source # 
-source_params = {"forma": "biphasic_train", 
+source_params = {"forma": "canonical", 
                 "amp": 1.0,
                 "ps": 10 ,     # [ms]
                 "pw":  np.NaN, # [ms] 

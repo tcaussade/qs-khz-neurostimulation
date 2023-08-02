@@ -38,7 +38,7 @@ block_thresh = np.zeros((len(ftrains),len(diameters)))
 for i,ft in enumerate(ftrains):
 
     # Construct the source #
-    source_params = {"forma": "biphasic_train", 
+    source_params = {"forma": "canonical", 
                     "amp": 1.0,
                     "ps": 10,  # ms
                     "pw": np.NaN,    # ms # 10kHz -> 0.1ms = 100us period
@@ -90,3 +90,4 @@ for i,ft in enumerate(ftrains):
         FIBER = FiberConstructor(fiber_params).assign_fiber_model(fibermodel)   
 
         block_thresh[i,j] = NeuronYale.threshold_finder(FIBER, t*1e3, (elec,pot), amp1 = max_amp, tol= 1e-5)
+        print(block_thresh[i,j])
