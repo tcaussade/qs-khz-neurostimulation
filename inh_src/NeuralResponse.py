@@ -21,8 +21,7 @@ class FiberConstructor:
         if model == "MRG":
             return  h.MRGFiber(self.fiberD, self.nnodes)
         elif model == "DCFiber":
-            return  h.DCFiber(self.fiberD, self.nnodes,
-                       self.constant_cm, self.c_dc, self.is_xtra)
+            pass
         pass
 
     def assign_neuron_model(self, model):
