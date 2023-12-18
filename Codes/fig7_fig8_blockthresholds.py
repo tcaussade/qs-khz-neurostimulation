@@ -36,11 +36,9 @@ for i,ft_data in enumerate(ftrains):
     path_ih2 = folder+"10_fix/threshs_ft"+ft+"_IH.txt"
     threshs_ih2[i,:] = np.loadtxt(path_ih2, delimiter = ",")
 
-# # Delete for outliers 
+# Data correction
 threshs_ih1[13,3] = np.NaN
 threshs_ih2[16,2] = np.NaN
-
-## "corrected" outliers
 if sigma_lb == "corrected":
     threshs_qs2[-4,1] = np.NaN
     threshs_qs2[12,0] = np.NaN
@@ -82,42 +80,62 @@ errs = error_dataframe(dfs, "err")
 
 plt.rc('font', size = 22)
 
+err = []
+for d in errg.freq.unique():
+    err.append( errg.loc[errg.freq == d].err.max() )
+
+
 # plot full-duty cycle
 fig, ax = plt.subplots(figsize = (12,8))
 
 p1 = sns.lineplot(data = dfg, x = "freq", y = "fid",
-                      hue = "fD", style = "model", palette = "flare", markers = True)
-p1.set(ylim=(0,550), xlabel = "Frequency (kHz)", ylabel = "Block Threshold ($\mu$A)")
+                      hue = "fD", style = "model", palette = "flare", markers = True, markersize = 10, dashes = [(1,0), (1,1)])
+p1.set(ylim=(0,550), xlabel = "Frequency (kHz)", ylabel = r"Block Threshold ($\mu$A)")
 p1_err = p1.twinx()
-sns.lineplot(data = errg, x = "freq", y = "err", ax = p1_err,
-                      hue = "fD", style = "model", palette = "flare", markers = "^", linestyle = "dotted")
-p1_err.set(ylim = (0,100), ylabel = "Percent error (%)")
+p1_err.plot(errg.freq.unique(), err, linestyle = "dashed", color = "black")
+p1_err.set(ylim = (0,30), ylabel = "Percent error (%)")
 h1,l1 = p1.get_legend_handles_labels()
 h2,l2 = p1_err.get_legend_handles_labels()
-l1.append("error"); h1.append(h2[-1])
-l1 = ["7.3 $\mu$m", "10.0 $\mu$m", "12.8 $\mu$m", "16.0 $\mu$m", "QS", "IH", "percent error"]
-h1.pop(5); h1.pop(0)
 
-ax.legend(handles=h1, labels = l1, loc = 2)
+l1  = [r"7.3 $\mu$m", r"10.0 $\mu$m", r"12.8 $\mu$m", r"16.0 $\mu$m"]
+l1c = ["QS", "IH", "percent error"]
+h1.pop(0)
+h1c = []
+h1c.append(h1[-1])
+h1c.append(h1[-2])
+h1c.append(h2[-1])
+leg1 = ax.legend(handles=h1, labels = l1, loc = "upper left", bbox_to_anchor = (0, 1))
+leg2 = ax.legend(handles=h1c, labels = l1c, loc = "upper left", bbox_to_anchor = (0.2, 1))
+ax.add_artist(leg1)
 p1_err.legend([],[], frameon = False)
+
+err = []
+for d in errs.freq.unique():
+    err.append( errs.loc[errs.freq == d].err.max() )
+
 
 # plot fixed duration
 fig, ax2 = plt.subplots(figsize = (12,8))
 p2 = sns.lineplot(data = dfs, x = "freq", y = "fid",
-                      hue = "fD", style = "model", palette = "flare", markers = True)
-p2.set(ylim = (0,1550), xlabel = "Frequency (kHz)", ylabel = "Block Threshold ($\mu$A)")
+                      hue = "fD", style = "model", palette = "flare", markers = True, markersize = 10, dashes = [(1,0), (1,1)])
+p2.set(ylim = (0,1550), xlabel = "Frequency (kHz)", ylabel = r"Block Threshold ($\mu$A)")
 p2_err = p2.twinx()
-sns.lineplot(data = errs, x = "freq", y = "err", ax = p2_err,
-                      hue = "fD", style = "model", palette = "flare", markers = "^", linestyle = "dotted")
-p2_err.set(ylim = (0,100), ylabel = "Percent error (%)")
+
+p2_err.plot(errs.freq.unique(), err, linestyle = "dashed", color = "black")
+p2_err.set(ylim = (0,30), ylabel = "Percent error (%)")
 h1,l1 = p1.get_legend_handles_labels()
 h2,l2 = p1_err.get_legend_handles_labels()
 
-l1.append("error"); h1.append(h2[-1])
-l1 = ["7.3 $\mu$m", "10.0 $\mu$m", "12.8 $\mu$m", "16.0 $\mu$m", "QS", "IH", "percent error"]
-h1.pop(5); h1.pop(0)
-
-ax2.legend(handles=h1, labels = l1, loc = 1)
+l1  = [r"7.3 $\mu$m", r"10.0 $\mu$m", r"12.8 $\mu$m", r"16.0 $\mu$m"]
+l1c = ["QS", "IH", "percent error"]
+h1.pop(0)
+h1c = []
+h1c.append(h1[-1])
+h1c.append(h1[-2])
+h1c.append(h2[-1])
+leg1 = ax2.legend(handles=h1, labels = l1, loc = "upper right", bbox_to_anchor = (1, 1))
+leg2 = ax2.legend(handles=h1c, labels = l1c, loc = "upper right", bbox_to_anchor = (0.8, 1))
+ax2.add_artist(leg1)
 p2_err.legend([],[], frameon = False)
 
 plt.show()

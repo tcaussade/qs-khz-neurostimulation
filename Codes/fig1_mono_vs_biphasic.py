@@ -18,7 +18,7 @@ source_params = {"forma": np.NaN,
                 "loc": np.array([0.,1.0,0.]),
                 "pol": +1}
 
-simulation_params = {"fcutoff" : 150.0, "pp" : 10} 
+simulation_params = {"fcutoff" : 150.0, "pp" : 30} 
 EXP = Experiment(simulation_params)
 sqs = 0.105
 
@@ -51,18 +51,34 @@ for i,ft in enumerate(ftrains):
         dfqs = pd.DataFrame({"t": t_qs*1e3, "pot":pot_qs, "model": "QS"})
         dfih = pd.DataFrame({"t": t_ih*1e3, "pot":pot_ih, "model": "IH"})
 
-        potentials[i,j] = pd.concat([dfqs,dfih], keys=["QS","IH"])
+        potentials[i,j] = pd.concat([dfih,dfqs], keys=["IH","QS"])
 
 tshow = 14
 
-fig, ax = plt.subplots(2,len(ftrains), sharex = True, sharey = True, figsize = (12,6))
+style = {}
+style["Biphasic"] = ""
+style["Monophasic"] = ""
+
+fig, ax = plt.subplots(2,len(ftrains), sharey = True, figsize = (12,6))
 for i,ft in enumerate(ftrains):
+   
+    if i == 0:
+        tshow = 2.0
+        tinit = 0.5
+    else:
+        tshow = 14
+        tinit = 0
+
     for j,shp in enumerate(["Monophasic", "Biphasic"]):
-        data = potentials[i,j][potentials[i,j]["t"]<tshow]
-        p = sns.lineplot(data = data, x = "t", y = "pot", hue = "model", ax = ax[j,i], palette=["#2aa5a5","#a52a2a"])
+        time = potentials[i,j]["t"]
+        data = potentials[i,j][(tinit<time) * (time<tshow)]
+        p = sns.lineplot(data = data, x = "t", y = "pot", style = "model", hue = "model", ax = ax[j,i], palette=["#a52a2a","#2aa5a5"])
         p.set(xlabel = "Time (ms)", ylabel = shp+"\nAmplitude (mV)")
-        ax[j,i].legend(loc = 4)
+        ax[j,i].legend().set_visible(False)
     ax[0,i].set_title( ("%1.0f Hz" % (ft*1e3)) )
+
+ax[0,:].set(xlabel = "")
+ax[0,1].legend(loc = 4)
 
 plt.rc('font', size = 22)
 plt.show()

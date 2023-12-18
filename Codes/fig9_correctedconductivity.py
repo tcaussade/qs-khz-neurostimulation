@@ -51,24 +51,32 @@ df_sopt = pd.concat(list_dfs, keys = np.arange(len(list_dfs)) )
 plt.figure(figsize=(4,3))
 colors = ["#6b6867", "#875632"]
 cmap = sns.color_palette("colorblind")
-plt.rc('font', size = 16)
+plt.rc('font', size = 22)
 
 p = sns.lineplot(data = df_sopt, x = "pw", y = "sopt",
                  hue = "tissue", style = "wf", markers = True, palette = "colorblind")
-ylims = np.arange(0.00,0.2501,0.01)
+ylims = np.arange(0.00,0.2501,0.02)
 xlims = np.arange(0,250, 20)
-p.set(xlabel = "Pulse duration ($\mu$s)", ylabel = "$\~\sigma_{qs}$ (S/m)",
+p.set(xlabel = r"Pulse duration ($\mu$s)", ylabel = r"$\~\sigma_{qs}$ (S/m)",
       ylim = (ylims[0],ylims[-1]), yticks = ylims,
       xlim = (xlims[1]/10,xlims[-1]))
-h,_ = p.get_legend_handles_labels()
-l = ["Tissues", "Grey matter", "Skin", "Fat", "Muscle",
-     "Waveforms","Canonical", "Asymmetric", "Shifted"]
-p.legend(handles = h, labels = l)
+h,l = p.get_legend_handles_labels()
+# l1 = ["Tissues", "Grey matter", "Skin", "Fat", "Muscle"]
+# l2 = ["Waveforms","Canonical", "Asymmetric", "Shifted"]
+l1 = ["Grey matter", "Skin", "Fat", "Muscle"]
+l2 = ["Canonical", "Asymmetric", "Shifted"]
+# p.legend(handles = h, labels = l)
+
+h.pop(0)
+
+leg1 = p.legend(handles=h, labels = l1, loc = "upper right", bbox_to_anchor = (1, 0.4))
+leg2 = p.legend(handles=h1c, labels = l2, loc = "upper right", bbox_to_anchor = (0.75, 0.4))
+p.add_artist(leg1)
 
 from matplotlib.ticker import ScalarFormatter
 ax = p.axes
 ax.set_xscale("log")
-ax.set_xticks([1,5,10,50,100])
+ax.set_xticks([1,5,10,50, 100])
 ax.get_xaxis().set_major_formatter(ScalarFormatter())
 
 plt.grid()

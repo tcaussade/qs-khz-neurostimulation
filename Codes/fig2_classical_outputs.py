@@ -28,7 +28,7 @@ for fib_idx, fibD in enumerate(diameters):
         cd_ih[fib_idx,idx, :] = np.loadtxt(folder+"/cd_thresholds_pw"+pw+"_"+"IH"+".txt", delimiter=",")[fib_idx,:]*1e3
 
     # Strength-Duration data
-    sd_explabel = "fix" # "sopt" # "fix"
+    sd_explabel = "sopt" # "fix"
     for idx,dist in enumerate(distances_sd):
         sd_qs[fib_idx,idx, :] = np.loadtxt(folder+"/sd_thresholds_dist"+dist+"_"+"QS_"+sd_explabel+".txt", delimiter=",")[fib_idx,:]*1e3
         sd_ih[fib_idx,idx, :] = np.loadtxt(folder+"/sd_thresholds_dist"+dist+"_"+"IH_"+"fix"+".txt", delimiter=",")[fib_idx,:]*1e3
@@ -80,42 +80,69 @@ data_errsd = np.column_stack((rep_diam, rep_dists, rep_pulse, err_sd.reshape(sd_
 df_errsd = pd.DataFrame(data_errsd,columns =  ["fD", "dist", "pw", "err"])
 df_errsd["model"] = np.repeat("err",sd_size)
 
+import matplotlib
+plt.rc('font', size = 22)
+
+err = []
+for d in df_errcd.dist.unique():
+    err.append( df_errcd.loc[df_errcd.dist == d].err.max() )
+
 # current-distance plot
 ax_cd, ax = plt.subplots()
-ax_cd = sns.lineplot(data = df_cd, x = "dist", y = "thresh", hue = "fD", style = "model", palette = "flare", markers = True)
+ax_cd = sns.lineplot(data = df_cd, x = "dist", y = "thresh", hue = "fD", style = "model", palette = "flare", markers = True, markersize = 10, dashes = [(1,0), (1,1)])
+ax_cd.set(yscale = "log")
 ax_errcd = ax_cd.twinx()
-sns.lineplot(data = df_errcd, x = "dist", y = "err",
-              hue = "fD", ax = ax_errcd, palette = "flare", markers="^", style = "model")
-ax_cd.set(xscale = "log", xlabel = "Distance (mm)", ylabel = "Activation threshold ($\mu$A)", ylim=(0,500) )
-ax_errcd.set(xscale = "log", ylim = (0,25), ylabel = "Percent error (%)")
-h1,l1 = ax_cd.get_legend_handles_labels()
-h2,l2 = ax_errcd.get_legend_handles_labels()
-l1.append("error")
-l1 = ["7.3 $\mu$m", "10.0 $\mu$m", "12.8 $\mu$m", "16.0 $\mu$m", "QS", "IH", "percent error"]
-h1.append(h2[-1])
-h1.pop(5); h1.pop(0)
-ax.legend(handles=h1+h2, labels = l1, loc = 0)
+ax_errcd.plot(df_errcd.dist.unique(), err, linestyle = "dashed", color = "black")
+
+ax_cd.set(xscale = "log", xlabel = "Distance (mm)", ylabel = r"Activation threshold ($\mu$A)") #, ylim=(0,500) )
+ax_errcd.set(xscale = "log", ylim = (0,20), ylabel = "Percent error (%)")
+h1,_ = ax_cd.get_legend_handles_labels()
+h2,_ = ax_errcd.get_legend_handles_labels()
+
+l1  = [r"7.3 $\mu$m", r"10.0 $\mu$m", r"12.8 $\mu$m", r"16.0 $\mu$m"]
+l1c = ["QS", "IH", "percent error"]
+
+h1.pop(0)
+h1c = []
+h1c.append(h1[-1])
+h1c.append(h1[-2])
+h1c.append(h2[-1])
+leg1 = ax.legend(handles=h1, labels = l1, loc = "upper left", bbox_to_anchor = (0.0, 1))
+leg2 = ax.legend(handles=h1c, labels = l1c, loc = "lower left", bbox_to_anchor = (0.0, 0.45))
+ax.add_artist(leg1)
 ax_errcd.legend([],[], frameon = False)
+
+plt.show()
+
+err = []
+for d in df_errsd.pw.unique():
+    err.append( df_errsd.loc[df_errsd.pw == d].err.max() )
+
 
 # strength-duration plot
 ax_sd, ax = plt.subplots()
 ax_sd = sns.lineplot(data = df_sd, x = "pw", y = "thresh", 
-                 hue = "fD", style = "model", palette = "flare", markers = True)
+                 hue = "fD", style = "model", palette = "flare", markers = True, markersize = 10, dashes = [(1,0), (1,1)])
 ax_errsd = ax_sd.twinx()
-sns.lineplot(data = df_errsd, x = "pw", y = "err",
-              hue = "fD", ax = ax_errsd, palette = "flare", markers="^", style = "model")
-ax_sd.set(xscale = "log", xlabel = "Pulse duration ($\mu$s)", ylabel = "Activation threshold ($\mu$A)", ylim=(0,500))
-ax_errsd.set(xscale = "log", ylim = (0,60), ylabel = "Percent error (%)")
+ax_errsd.plot(df_errsd.pw.unique(), err, linestyle = "dashed", color = "black")
+ax_sd.set(xscale = "log", xlabel = r"Pulse duration ($\mu$s)", ylabel = r"Activation threshold ($\mu$A)", ylim=(10,1000), yscale = "log")
+ax_errsd.set(xscale = "log", ylim = (0,20), ylabel = "Percent error (%)")
 h1,l1 = ax_sd.get_legend_handles_labels()
 h2,l2 = ax_errsd.get_legend_handles_labels()
-l1.append("error")
-l1 = ["7.3 $\mu$m", "10.0 $\mu$m", "12.8 $\mu$m", "16.0 $\mu$m", "QS", "IH", "percent error"]
-h1.append(h2[-1])
-h1.pop(5); h1.pop(0)
-ax.legend(handles=h1+h2, labels = l1, loc = 0)
+
+l1  = [r"7.3 $\mu$m", r"10.0 $\mu$m", r"12.8 $\mu$m", r"16.0 $\mu$m"]
+l1c = ["QS", "IH", "percent error"]
+
+h1.pop(0)
+h1c = []
+h1c.append(h1[-1])
+h1c.append(h1[-2])
+h1c.append(h2[-1])
+leg1 = ax.legend(handles=h1, labels = l1, loc = "upper right", bbox_to_anchor = (1, 1))
+leg2 = ax.legend(handles=h1c, labels = l1c, loc = "lower right", bbox_to_anchor = (1, 0.55))
+ax.add_artist(leg1)
 ax_errsd.legend([],[], frameon = False)
 
-plt.rc('font', size = 22)
 plt.show()
 
 
