@@ -32,7 +32,7 @@ For a quick use of the improved quasi-static approximation see `Corrected Conduc
 
 ## References
 
-[1] Caussade T., Paduro E., Courdurier M., Cerpa E., Grill W. M., Medina L. E. (2023). "Towards a more accurate quasi-static approximation of the electric potential for neurostimulation with kilohertz-frequency sources". Journal of Neural Engineering (submission/review pending)
+[1] Caussade, T., Paduro, E., Courdurier, M., Cerpa, E., Grill, W. M., & Medina, L. E. (2023). Towards a more accurate quasi-static approximation of the electric potential for neurostimulation with kilohertz-frequency sources. Journal of neural engineering, 20(6), 10.1088/1741-2552/ad1612. https://doi.org/10.1088/1741-2552/ad1612
 
 ## License
 
